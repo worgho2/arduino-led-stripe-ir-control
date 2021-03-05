@@ -3,184 +3,183 @@
 #include <IRremote.h>
 
 #define IR_RECEIVE_PIN  6
+
 #define RED 9
 #define GREEN 10
 #define BLUE 5
-
-// On the Zero and others we switch explicitly to SerialUSB
-#if defined(ARDUINO_ARCH_SAMD)
-#define Serial SerialUSB
-#endif
 
 int currentRED = 0;
 int currentGREEN = 0;
 int currentBLUE = 0;
 
-String p1 = ";";
-
 void setup() {
-//    Serial.begin(9600);
-    delay(2000);
+  IrReceiver.begin(IR_RECEIVE_PIN, DISABLE_LED_FEEDBACK);
+  Serial.begin(9600);
+  pinMode(BLUE, OUTPUT);
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
 
-    IrReceiver.begin(IR_RECEIVE_PIN, DISABLE_LED_FEEDBACK);
-
-    pinMode(BLUE, OUTPUT);
-    pinMode(RED, OUTPUT);
-    pinMode(GREEN, OUTPUT);
+  setRGB(currentRED, currentGREEN, currentBLUE);
 }
 
 void loop() {
-    if (IrReceiver.decode()) {
-      
-        IrReceiver.stop();
-        delay(8);
-        IrReceiver.start(8000);
-        IrReceiver.resume();
+  if (IrReceiver.decode()) {  
+    if (IrReceiver.decodedIRData.address == 0) {
+      switch (IrReceiver.decodedIRData.command) {
 
-        if (IrReceiver.decodedIRData.address == 0) {
-          
-            switch (IrReceiver.decodedIRData.command) {
-              
-            case 0x46: // Seta para cima
-              while(true) {
-                for(int i=0;i<=255;i++) {
-                  smoothSetRGB(i,i,i, 1);
-                  delay(15);
-                  if (IrReceiver.decode()) { return; }
-                }
+      case 0x46: // arrow up
+        while(true) {
+          for(int i=0;i<=255;i++) {
+            IrReceiver.resume();
+            smoothSetRGB(i,i,i);
+            delay(20);
+            if (didReceiveCommand() && i>=30) return;
+          }
 
-                for(int j=0;j<=255;j++) {
-                  smoothSetRGB(255-j,255-j,255-j, 1);
-                  delay(15);
-                  if (IrReceiver.decode()) { return; }
-                }
-              
-                if (IrReceiver.decode()) { return; }
-              }
-              break;
-              
-            case 0x15: // Seta para baixo              
-              while(true) {
-                for(int i=0;i<=255;i++) {
-                  smoothSetRGB(i,255-i,0, 1);
-                  delay(20);
-                  if ( IrReceiver.decode()) { return; }
-                }
-
-                for(int i=255;i>=0;i--) {
-                  smoothSetRGB(i,255-i,0, 1);
-                  delay(20);
-                  if (IrReceiver.decode()) { return; }
-                }
-                
-                if (IrReceiver.decode()) { return; }
-              }
-              break;
-              
-            case 0x44: // Seta para esquerda
-              while(true) {
-                for(int i=0;i<=255;i++) {
-                  smoothSetRGB(0,255-i,i, 1);
-                  delay(20);
-                  if (IrReceiver.decode()) { return; }
-                }
-
-                for(int i=255;i>=0;i--) {
-                  smoothSetRGB(0,255-i,i, 1);
-                  delay(20);
-                  if (IrReceiver.decode()) { return; }
-                }
-                
-                if (IrReceiver.decode()) { return; }
-              }
-              break;
-              
-            case 0x43: // Seta para direita
-              while(true) {
-                for(int i=0;i<=255;i++) {
-                  smoothSetRGB(255-i,0,i, 1);
-                  delay(20);
-                  if ( IrReceiver.decode() ) { return; }
-                }
-
-                for(int i=255;i>=0;i--) {
-                  smoothSetRGB(255-i,0,i, 1);
-                  delay(20);
-                  if (IrReceiver.decode() ) { return; }
-                }
-                
-                if (IrReceiver.decode() ) { return; }
-              }
-              break;
-              
-            case 0x40: // OK             
-              while(true) {
-                smoothSetRGB(random(0,255), random(0,255), random(0,255), 40);
-
-                for (int i=0;i<=random(10000,30000);i++) {
-                  delay(1);
-                  if (IrReceiver.decode()) { return; }
-                }
-
-                if (IrReceiver.decode()) { return; }
-              }
-              break;
-              
-            case 0x42: // *
-              smoothSetRGB(random(0,255), random(0,255), random(0,255), 1);
-              break;
-              
-            case 0x4A: // #
-              smoothSetRGB(0,0,0, 1);
-              break;
-              
-            case 0x52: // 0
-              smoothSetRGB(255, 255, 255, 1);
-              break;
-              
-            case 0x16: // 1
-              smoothSetRGB(255, 0, 0, 1);
-              break;
-              
-            case 0x19: // 2
-              smoothSetRGB(0, 255, 0, 1);
-              break;
-              
-            case 0xD:  // 3
-              smoothSetRGB(0, 0, 255, 1);
-              break;
-              
-            case 0xC:  // 4
-              smoothSetRGB(255, 255, 0, 1);
-              break;
-              
-            case 0x18: // 5
-              smoothSetRGB(255, 0, 255, 1);
-              break;
-              
-            case 0x5E: // 6
-              smoothSetRGB(0, 255, 255, 1);
-              break;
-              
-            case 0x8:  // 7
-              smoothSetRGB(255, 255, 128, 1);
-              break;
-              
-            case 0x1C: // 8
-              smoothSetRGB(255, 128, 255, 1);
-              break;
-              
-            case 0x5A: // 9
-              smoothSetRGB(128, 255, 255, 1);
-              break;
-              
-             default: break;
-            }
+          for(int i=0;i<=255;i++) {
+            IrReceiver.resume();
+            smoothSetRGB(255-i,255-i,255-i);
+            delay(20);
+            if (didReceiveCommand() && i<=225) return;
+          }
         }
+        break;
+
+      case 0x15: // arrow down
+        while(true) {
+          for(int i=0;i<=255;i++) {
+            IrReceiver.resume();
+            smoothSetRGB(i,255-i,0);
+            delay(20);
+            if (didReceiveCommand() && i>=30) return;
+          }
+
+          for(int i=255;i>=0;i--) {
+            IrReceiver.resume();
+            smoothSetRGB(i,255-i,0);
+            delay(20);
+            if (didReceiveCommand() && i<=225) return;
+          }
+        }
+        break;
+
+      case 0x44: // arrow left
+        while(true) {
+          for(int i=0;i<=255;i++) {
+            IrReceiver.resume();
+            smoothSetRGB(0,255-i,i);
+            delay(20);
+            if (didReceiveCommand() && i>=30) return;
+          }
+
+          for(int i=255;i>=0;i--) {
+            IrReceiver.resume();
+            smoothSetRGB(0,255-i,i);
+            delay(20);
+            if (didReceiveCommand() && i<=225) return;
+          }
+        }
+        break;
+
+      case 0x43: // arrow right
+        while(true) {
+          for(int i=0;i<=255;i++) {
+            IrReceiver.resume();
+            smoothSetRGB(255-i,0,i);
+            delay(20);
+            if (didReceiveCommand() && i>=30) return;
+          }
+
+          for(int i=255;i>=0;i--) {
+            IrReceiver.resume();
+            smoothSetRGB(255-i,0,i);
+            delay(20);
+            if (didReceiveCommand() && i<=225) return;
+          }
+        }
+        break;
+
+      case 0x40: // ok
+        while(true) {
+          smoothSetRGB(random(0,255), random(0,255), random(0,255));
+
+          for (int i=0;i<=2000;i++) {
+            IrReceiver.resume();
+            delay(1);
+            if (didReceiveCommand() && i>=500) return;
+          }
+        }
+        break;
+
+      case 0x42: // *
+        IrReceiver.resume();
+        smoothSetRGB(random(0,255), random(0,255), random(0,255));
+        break;
+
+      case 0x4A: // #
+        IrReceiver.resume();
+        smoothSetRGB(0,0,0);
+        break;
+
+      case 0x52: // 0
+        IrReceiver.resume();
+        smoothSetRGB(255, 255, 255);
+        break;
+
+      case 0x16: // 1
+        IrReceiver.resume();
+        smoothSetRGB(255, 0, 0);
+        break;
+
+      case 0x19: // 2
+        IrReceiver.resume();
+        smoothSetRGB(0, 255, 0);
+        break;
+
+      case 0xD:  // 3
+        IrReceiver.resume();
+        smoothSetRGB(0, 0, 255);
+        break;
+
+      case 0xC:  // 4
+        IrReceiver.resume();
+        smoothSetRGB(255, 255, 0);
+        break;
+
+      case 0x18: // 5
+        IrReceiver.resume();
+        smoothSetRGB(255, 0, 255);
+        break;
+
+      case 0x5E: // 6
+        IrReceiver.resume();
+        smoothSetRGB(0, 255, 255);
+        break;
+
+      case 0x8:  // 7
+        IrReceiver.resume();
+        smoothSetRGB(255, 0, 150);
+        break;
+
+      case 0x1C: // 8
+        IrReceiver.resume();
+        smoothSetRGB(255, 128, 255);
+        break;
+
+      case 0x5A: // 9
+        IrReceiver.resume();
+        smoothSetRGB(128, 255, 255);
+        break;
+
+       default:
+        IrReceiver.resume();
+        break;
+      }
     }
+  }
 }
 
-static void setRGB(int red, int green, int blue) {
+void setRGB(int red, int green, int blue) {
   analogWrite(RED, red);
   analogWrite(GREEN, green);
   analogWrite(BLUE, blue);
@@ -188,11 +187,9 @@ static void setRGB(int red, int green, int blue) {
   currentRED = red;
   currentGREEN = green;
   currentBLUE = blue;
-
-  printCurrentRGB();
 }
 
-static void smoothSetRGB(int red, int green, int blue, int delayTime) {
+void smoothSetRGB(int red, int green, int blue) {
   while(currentRED != red || currentGREEN != green || currentBLUE != blue) {
     if(currentRED > red) {
       currentRED -= 1;
@@ -213,11 +210,18 @@ static void smoothSetRGB(int red, int green, int blue, int delayTime) {
     }
 
     setRGB(currentRED, currentGREEN, currentBLUE);
-    delay(delayTime);
-    if (IrReceiver.decode()) { return; }
+    delay(1);
   }
 }
 
-static void printCurrentRGB() {
-//  Serial.println("RGB -> " + p1 + currentRED + p1 + currentGREEN + p1 + currentBLUE);
+bool didReceiveCommand() {
+  if (IrReceiver.decode() && IrReceiver.decodedIRData.address == 0) {
+    return true;
+  }
+  return false;
+}
+
+void printCurrentRGB() {
+  String p1 = ";";
+  Serial.println("RGB -> " + p1 + currentRED + p1 + currentGREEN + p1 + currentBLUE);
 }
